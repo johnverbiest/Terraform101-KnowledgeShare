@@ -1,0 +1,170 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "storageAccountType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_ZRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "Storage Account type"
+      }
+    },
+    "keyVaultOwnerId": {
+      "type": "string",
+      "metadata": {
+        "description": "Specifies the object ID of a user, service principal or security group in the Azure Active Directory tenant for the vault. The object ID must be unique for the list of access policies. Get it by using Get-AzADUser or Get-AzADServicePrincipal cmdlets."
+      }
+    },
+    "storageAccountName": {
+      "type": "string",
+      "defaultValue": "[concat(replace(toLower(resourceGroup().name),'-',''), uniqueString(resourceGroup().id), 'storage')]"
+    },
+    "keyVaultName": {
+      "type": "string",
+      "defaultValue": "[concat(replace(toLower(resourceGroup().name),'-',''), uniqueString(resourceGroup().id), 'keyvault')]"
+    },
+    "storageContainer_name": {
+      "type": "string",
+      "defaultValue": "terraform-state"
+    }
+  },
+  "variables": {
+    "storageAccountName": "[if(greater(length(parameters('storageAccountName')), 24), substring(parameters('storageAccountName'), 0, 24), parameters('storageAccountName'))]",
+    "location": "[resourceGroup().location]",
+    "keyVaultName": "[if(greater(length(parameters('keyVaultName')), 24), substring(parameters('keyVaultName'), 0, 24), parameters('keyVaultName'))]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Storage/storageAccounts",
+      "name": "[variables('storageAccountName')]",
+      "location": "[variables('location')]",
+      "apiVersion": "2018-07-01",
+      "sku": {
+        "name": "[parameters('storageAccountType')]"
+      },
+      "kind": "StorageV2",
+      "properties": {},
+      "tags": {
+        "environment": "management",
+        "deploy": "ARMtemplate",
+        "source": "Dop.infrastructure Github",
+        "purpose": "terraformState"
+      }
+    },
+    {
+      "name": "[concat(variables('storageAccountName'),'/default/', parameters('storageContainer_name'))]",
+      "type": "Microsoft.Storage/storageAccounts/blobServices/containers",
+      "apiVersion": "2018-07-01",
+      "properties": {
+        "publicAccess": "None"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "name": "[variables('keyVaultName')]",
+      "apiVersion": "2015-06-01",
+      "location": "[variables('location')]",
+      "tags": {
+        "environment": "management",
+        "deploy": "ARMtemplate",
+        "source": "Dop.infrastructure Github",
+        "purpose": "terraformState"
+      },
+      "properties": {
+        "sku": {
+          "family": "A",
+          "name": "Standard"
+        },
+        "tenantId": "[subscription().tenantId]",
+        "enableSoftDelete": true,
+        "softDeleteRetentionInDays": 90,
+        "accessPolicies": [
+          {
+            "tenantId": "[subscription().tenantId]",
+            "objectId": "[parameters('keyVaultOwnerId')]",
+            "permissions": {
+              "keys": [
+                "All"
+              ],
+              "secrets": [
+                "All"
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "name": "[concat(variables('keyVaultName'), '/TerraformStorageConnectionString')]",
+      "apiVersion": "2015-06-01",
+      "properties": {
+        "contentType": "text/plain",
+        "value": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('storageAccountName'),';','AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts',variables('storageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value,';')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "name": "[concat(variables('keyVaultName'), '/TerraformStorageAccountName')]",
+      "apiVersion": "2015-06-01",
+      "properties": {
+        "contentType": "text/plain",
+        "value": "[variables('storageAccountName')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "name": "[concat(variables('keyVaultName'), '/TerraformStorageKey')]",
+      "apiVersion": "2015-06-01",
+      "properties": {
+        "contentType": "text/plain",
+        "value": "[listKeys(resourceId('Microsoft.Storage/storageAccounts',variables('storageAccountName')), providers('Microsoft.Storage', 'storageAccounts').apiVersions[0]).keys[0].value]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "name": "[concat(variables('keyVaultName'), '/TerraformContainer')]",
+      "apiVersion": "2015-06-01",
+      "properties": {
+        "contentType": "text/plain",
+        "value": "[parameters('storageContainer_name')]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', variables('keyVaultName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountName'))]"
+      ]
+    }
+  ],
+
+  "outputs": {
+    "storageAccountName": {
+      "type": "string",
+      "value": "[variables('storageAccountName')]"
+    },
+    "keyVaultName": {
+      "type": "string",
+      "value": "[variables('keyVaultName')]"
+    }
+  }
+}
