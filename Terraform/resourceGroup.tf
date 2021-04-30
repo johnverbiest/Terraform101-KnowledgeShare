@@ -11,5 +11,6 @@ resource "azurerm_resource_group" "awesomeTfDemo" {
     Provider = "Terraform"
     File = "resourceGroup.tf"
     Repository = "Terraform101-KnowledgeShare"
+    Environment = local.environment
   }
 }

@@ -22,6 +22,7 @@ resource "azurerm_app_service_plan" "awesomeTfDemo" {
     Provider = "Terraform"
     File = "web.tf"
     Repository = "Terraform101-KnowledgeShare"
+    Environment = local.environment
   }
 }
 
@@ -39,5 +40,6 @@ resource "azurerm_app_service" "awesomeTfDemo" {
     Provider = "Terraform"
     File = "web.tf"
     Repository = "Terraform101-KnowledgeShare"
+    Environment = local.environment
   }
 }
