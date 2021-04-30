@@ -30,7 +30,7 @@ resource "azurerm_storage_account" "logStorage" {
 
   tags = {
     Provider = "Terraform"
-    File = "web.tf"
+    File = "storageAccount.tf"
     Repository = "Terraform101-KnowledgeShare"
     Environment = local.environment
   }
