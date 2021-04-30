@@ -10,7 +10,7 @@ variable "location" {
   description = "Azure Location"
 }
 
-resource "azurerm_resource_group" "InvoiceApi" {
+resource "azurerm_resource_group" "awesomeTfDemo" {
   name     = var.resourceGroupName
   location = var.location
   tags     = {
