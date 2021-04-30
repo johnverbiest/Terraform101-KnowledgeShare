@@ -1,9 +1,3 @@
-variable "resourceGroupName" {
-  type        = string
-  default     = "AwesomeTfDemo"
-  description = "Resource Group Name"
-}
-
 variable "location" {
   type        = string
   default     = "westeurope"
@@ -11,7 +5,7 @@ variable "location" {
 }
 
 resource "azurerm_resource_group" "awesomeTfDemo" {
-  name     = var.resourceGroupName
+  name     = "${var.productName}${local.resource_postfix}"
   location = var.location
   tags     = {
     Provider = "Terraform"
