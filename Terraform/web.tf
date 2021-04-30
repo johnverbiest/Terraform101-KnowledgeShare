@@ -43,3 +43,13 @@ resource "azurerm_app_service" "awesomeTfDemo" {
     Environment = local.environment
   }
 }
+
+
+resource "azurerm_app_service_custom_hostname_binding" "awesomeTfDemo" {
+  hostname            = trim(azurerm_dns_cname_record.webDnsEntry.fqdn, ".")
+  app_service_name    = azurerm_app_service.awesomeTfDemo.name
+  resource_group_name = azurerm_resource_group.awesomeTfDemo.name
+  lifecycle {
+    ignore_changes = [ssl_state, thumbprint]
+  }
+}
