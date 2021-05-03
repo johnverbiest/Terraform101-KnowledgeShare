@@ -47,7 +47,7 @@ resource "azurerm_app_service" "awesomeTfDemo" {
   connection_string {
     name  = "Database"
     type  = "SQLServer"
-    value = "Server=${azurerm_sql_server.sqlServer.fully_qualified_domain_name};Database=${azurerm_sql_database.AwesomeDatabase.name};User Id=${random_string.sqlUser.result};Password=${random_password.sqlPassword.result}"
+    value = "Server=${azurerm_sql_server.sqlServer.fully_qualified_domain_name};Database=${azurerm_sql_database.AwesomeDatabase.name};User Id=${azurerm_sql_server.sqlServer.administrator_login};Password=${azurerm_sql_server.sqlServer.administrator_login_password}"
   }
 
   tags = {
