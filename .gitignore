@@ -33,3 +33,7 @@ override.tf.json
 .terraformrc
 terraform.rc
 /~$Terraform 101.pptx
+
+.idea/
+
+Terraform/.terraform.lock.hcl
